@@ -19,6 +19,7 @@ export enum LiveAuctionViewState {
   Participated = '1',
   Ended = '2',
   Resale = '3',
+  Own = '4',
 }
 
 export const SalesListView = () => {
@@ -30,9 +31,9 @@ export const SalesListView = () => {
   return (
     <>
       <Banner
-        src="/banner2.jpeg"
-        headingText="FEDERICO CHIESA NFT AUCTION"
-        subHeadingText="EURO 2020 TRIBUTE"
+        src="/main-banner.svg"
+        headingText="The amazing world of Metaplex."
+        subHeadingText="Buy exclusive Metaplex NFTs."
         actionComponent={<HowToBuyModal buttonClassName="secondary-btn" />}
         useBannerBg
       />
@@ -63,6 +64,12 @@ export const SalesListView = () => {
                   <TabPane
                     tab="Participated"
                     key={LiveAuctionViewState.Participated}
+                  ></TabPane>
+                )}
+                {connected && (
+                  <TabPane
+                    tab="My Live Auctions"
+                    key={LiveAuctionViewState.Own}
                   ></TabPane>
                 )}
               </Tabs>

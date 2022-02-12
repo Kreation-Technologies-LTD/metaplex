@@ -39,7 +39,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection } from '@solana/web3.js';
 import { MintLayout } from '@solana/spl-token';
 import { useHistory, useParams } from 'react-router-dom';
-import { getLast } from '../../utils/utils';
+import { cleanName, getLast } from '../../utils/utils';
 import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import {
@@ -241,10 +241,8 @@ const CategoryStep = (props: {
       <Row className="call-to-action">
         <h2>Create a new item</h2>
         <p>
-          First time creating on Metaplex?{' '}
-          <a href="https://docs.metaplex.com/storefront/create" target="_blank" rel="noreferrer">
-            Read our creators’ guide.
-          </a>
+          First time creating on Kreation?{' '}
+          <a href="#">Read our creators’ guide.</a>
         </p>
       </Row>
       <Row justify={width < 768 ? 'center' : 'start'}>
@@ -330,7 +328,7 @@ const UploadStep = (props: {
 
   const [customURL, setCustomURL] = useState<string>('');
   const [customURLErr, setCustomURLErr] = useState<string>('');
-  const disableContinue = !(coverFile || (!customURLErr && !!customURL));
+  const disableContinue = !coverFile || !!customURLErr;
 
   useEffect(() => {
     props.setAttributes({
@@ -385,7 +383,7 @@ const UploadStep = (props: {
   return (
     <>
       <Row className="call-to-action">
-        <h2>Now, let&apos;s upload your creation</h2>
+        <h2>Now, let's upload your creation</h2>
         <p style={{ fontSize: '1.2rem' }}>
           Your file will be uploaded to the decentralized web via Arweave.
           Depending on file type, can take up to 1 minute. Arweave is a new type
@@ -400,10 +398,6 @@ const UploadStep = (props: {
           accept=".png,.jpg,.gif,.mp4,.svg"
           style={{ padding: 20, background: 'rgba(255, 255, 255, 0.08)' }}
           multiple={false}
-          onRemove={() => {
-            setMainFile(undefined);
-            setCoverFile(undefined);
-          }}
           customRequest={info => {
             // dont upload files here, handled outside of the control
             info?.onSuccess?.({}, null as any);
@@ -525,7 +519,7 @@ const UploadStep = (props: {
           type="primary"
           size="large"
           disabled={disableContinue}
-          onClick={async () => {
+          onClick={() => {
             props.setAttributes({
               ...props.attributes,
               properties: {
@@ -545,16 +539,14 @@ const UploadStep = (props: {
                     } as MetadataFile;
                   }),
               },
-              image: coverFile?.name || customURL || '',
+              image: coverFile?.name || '',
               animation_url:
                 props.attributes.properties?.category !==
                   MetadataCategory.Image && customURL
                   ? customURL
                   : mainFile && mainFile.name,
             });
-            const url = await fetch(customURL).then(res => res.blob());
-            const files = [coverFile, mainFile, customURL ? new File([url], customURL) : '']
-              .filter(f => f) as File[];
+            const files = [coverFile, mainFile].filter(f => f) as File[];
 
             props.setFiles(files);
             props.confirm();
@@ -623,12 +615,22 @@ const InfoStep = (props: {
   setAttributes: (attr: IMetadataExtension) => void;
   confirm: () => void;
 }) => {
-  const { image } = useArtworkFiles(
+  const [creators, setCreators] = useState<Array<UserValue>>([]);
+  const [royalties, setRoyalties] = useState<Array<Royalty>>([]);
+  const { image, animation_url } = useArtworkFiles(
     props.files,
     props.attributes,
   );
   const [form] = Form.useForm();
 
+  useEffect(() => {
+    setRoyalties(
+      creators.map(creator => ({
+        creatorKey: creator.key,
+        amount: Math.trunc(100 / creators.length),
+      })),
+    );
+  }, [creators]);
   return (
     <>
       <Row className="call-to-action">
@@ -727,16 +729,18 @@ const InfoStep = (props: {
             <Form.List name="attributes">
               {(fields, { add, remove }) => (
                 <>
-                  {fields.map(({ key, name }) => (
+                  {fields.map(({ key, name, fieldKey }) => (
                     <Space key={key} align="baseline">
                       <Form.Item
                         name={[name, 'trait_type']}
+                        fieldKey={[fieldKey, 'trait_type']}
                         hasFeedback
                       >
                         <Input placeholder="trait_type (Optional)" />
                       </Form.Item>
                       <Form.Item
                         name={[name, 'value']}
+                        fieldKey={[fieldKey, 'value']}
                         rules={[{ required: true, message: 'Missing value' }]}
                         hasFeedback
                       >
@@ -744,6 +748,7 @@ const InfoStep = (props: {
                       </Form.Item>
                       <Form.Item
                         name={[name, 'display_type']}
+                        fieldKey={[fieldKey, 'display_type']}
                         hasFeedback
                       >
                         <Input placeholder="display_type (Optional)" />
@@ -1069,7 +1074,7 @@ const LaunchStep = (props: {
   connection: Connection;
 }) => {
   const [cost, setCost] = useState(0);
-  const { image } = useArtworkFiles(
+  const { image, animation_url } = useArtworkFiles(
     props.files,
     props.attributes,
   );
@@ -1268,13 +1273,13 @@ const Congrats = (props: {
 
   const newTweetURL = () => {
     const params = {
-      text: "I've created a new NFT artwork on Metaplex, check it out!",
+      text: "I've created a new NFT artwork on Kreation, check it out!",
       url: `${
         window.location.origin
       }/#/art/${props.nft?.metadataAccount.toString()}`,
-      hashtags: 'NFT,Crypto,Metaplex',
+      hashtags: 'NFT,Crypto,Kreation',
       // via: "Metaplex",
-      related: 'Metaplex,Solana',
+      related: 'Kreation,Solana',
     };
     const queryParams = new URLSearchParams(params).toString();
     return `https://twitter.com/intent/tweet?${queryParams}`;
@@ -1286,7 +1291,7 @@ const Congrats = (props: {
       <>
         <div className="waiting-title">Sorry, there was an error!</div>
         <p>{props.alert}</p>
-        <Button onClick={() => history.push('/art/create')}>
+        <Button onClick={_ => history.push('/art/create')}>
           Back to Create NFT
         </Button>
       </>
@@ -1299,14 +1304,14 @@ const Congrats = (props: {
       <div className="congrats-button-container">
         <Button
           className="metaplex-button"
-          onClick={() => window.open(newTweetURL(), '_blank')}
+          onClick={_ => window.open(newTweetURL(), '_blank')}
         >
           <span>Share it on Twitter</span>
           <span>&gt;</span>
         </Button>
         <Button
           className="metaplex-button"
-          onClick={() =>
+          onClick={_ =>
             history.push(`/art/${props.nft?.metadataAccount.toString()}`)
           }
         >
@@ -1315,7 +1320,7 @@ const Congrats = (props: {
         </Button>
         <Button
           className="metaplex-button"
-          onClick={() => history.push('/auction/create')}
+          onClick={_ => history.push('/auction/create')}
         >
           <span>Sell it via auction</span>
           <span>&gt;</span>

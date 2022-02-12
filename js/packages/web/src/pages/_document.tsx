@@ -5,7 +5,6 @@ import Document, {
   NextScript,
   DocumentContext,
 } from 'next/document';
-import React from 'react';
 
 export default class MetaplexDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
@@ -41,7 +40,7 @@ export default class MetaplexDocument extends Document {
             href="/favicon-16x16.png"
           />
           <meta name="theme-color" content="#000000" />
-          <meta name="description" content="Metaplex NFT Marketplace" />
+          <meta name="description" content="KREATION NFT Marketplace" />
           <link rel="manifest" href="/manifest.json" />
           <link
             rel="stylesheet"
